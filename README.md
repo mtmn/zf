@@ -1,6 +1,6 @@
 # zf
 
-[![shield showing current tests status](https://github.com/natecraddock/zf/actions/workflows/tests.yml/badge.svg)](https://github.com/natecraddock/zf/actions/workflows/tests.yml) [![Packaging status](https://repology.org/badge/tiny-repos/zf.svg)](https://repology.org/project/zf/versions)
+[![shield showing current tests status](https://github.com/mtmn/zf/actions/workflows/tests.yml/badge.svg)](https://github.com/mtmn/zf/actions/workflows/tests.yml) [![Packaging status](https://repology.org/badge/tiny-repos/zf.svg)](https://repology.org/project/zf/versions)
 
 zf is a fuzzy finder that excels at filtering filepaths:
 
@@ -28,8 +28,8 @@ https://user-images.githubusercontent.com/7967463/225198950-a6ab568f-644f-40a1-b
 
 ## Docs
 
-* [Usage Documentation](https://github.com/natecraddock/zf/blob/main/doc/zf.md)
-* [Library Documentation](https://github.com/natecraddock/zf/blob/main/doc/lib.md)
+* [Usage Documentation](https://github.com/mtmn/zf/blob/main/doc/zf.md)
+* [Library Documentation](https://github.com/mtmn/zf/blob/main/doc/lib.md)
 
 ## Why use zf?
 
