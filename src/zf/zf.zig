@@ -108,8 +108,8 @@ test deduplicateMatches {
         try testing.expectEqualSlices(usize, &.{}, deduplicateMatches(&matches));
     }
     {
-        var matches: [1]usize = .{ 1 };
-        try testing.expectEqualSlices(usize, &.{ 1 }, deduplicateMatches(&matches));
+        var matches: [1]usize = .{1};
+        try testing.expectEqualSlices(usize, &.{1}, deduplicateMatches(&matches));
     }
     {
         var matches: [2]usize = .{ 1, 2 };
@@ -117,7 +117,7 @@ test deduplicateMatches {
     }
     {
         var matches: [2]usize = .{ 1, 1 };
-        try testing.expectEqualSlices(usize, &.{ 1 }, deduplicateMatches(&matches));
+        try testing.expectEqualSlices(usize, &.{1}, deduplicateMatches(&matches));
     }
     {
         var matches: [4]usize = .{ 1, 2, 3, 3 };

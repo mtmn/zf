@@ -410,7 +410,7 @@ pub const State = struct {
                 const highlight_style: vaxis.Style = .{
                     .reverse = highlight,
                     .fg = if (slice.highlight and state.config.highlight != null) .{
-                        .index = @intFromEnum(state.config.highlight.?),
+                        .index = @backingInt(state.config.highlight.?),
                     } else .default,
                 };
 

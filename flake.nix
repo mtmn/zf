@@ -29,7 +29,7 @@
           name = "zf";
           nativeBuildInputs = [
             pkgs.pinact
-            pkgs.zig_0_16
+            pkgs.zig_0_17
           ];
         };
       });
