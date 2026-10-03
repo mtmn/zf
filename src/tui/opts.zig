@@ -107,7 +107,7 @@ pub const Config = struct {
     highlight: ?Color = .cyan,
 };
 
-pub fn parse(allocator: Allocator, args: []const []const u8, stderr: *Io.Writer) Config {
+pub fn parse(allocator: Allocator, args: []const []const u8, stderr: *Io.Writer) !Config {
     var config: Config = .{};
 
     if (args.len == 1) return config;
@@ -116,31 +116,27 @@ pub fn parse(allocator: Allocator, args: []const []const u8, stderr: *Io.Writer)
     while (iter.next()) |opt| {
         // help
         if (mem.eql(u8, opt, "h") or mem.eql(u8, opt, "help")) {
-            stderr.print("{s}\n", .{help}) catch unreachable;
-            stderr.flush() catch unreachable;
-            process.exit(0);
+            printAndExit(stderr, "{s}\n", .{help}, 0);
         }
 
         // version
         else if (mem.eql(u8, opt, "v") or mem.eql(u8, opt, "version")) {
-            stderr.print("{s}\n", .{version_str}) catch unreachable;
-            stderr.flush() catch unreachable;
-            process.exit(0);
+            printAndExit(stderr, "{s}\n", .{version_str}, 0);
         }
 
         // delimiter
         else if (mem.eql(u8, opt, "d") or mem.eql(u8, opt, "delimiter")) {
             const delimiter = iter.getArg() orelse missingArg(stderr, iter, opt);
             if (delimiter.len == 0) argError(stderr, "delimiter cannot be empty");
-            config.delimiter = allocator.dupe(u8, delimiter) catch unreachable;
+            config.delimiter = try allocator.dupe(u8, delimiter);
         } else if (mem.eql(u8, opt, "0")) {
-            config.delimiter = allocator.dupe(u8, &.{0}) catch unreachable;
+            config.delimiter = try allocator.dupe(u8, &.{0});
         }
 
         // filter
         else if (mem.eql(u8, opt, "f") or mem.eql(u8, opt, "filter")) {
             const filter = iter.getArg() orelse missingArg(stderr, iter, opt);
-            config.filter = allocator.dupe(u8, filter) catch unreachable;
+            config.filter = try allocator.dupe(u8, filter);
         }
 
         // height
@@ -164,7 +160,7 @@ pub fn parse(allocator: Allocator, args: []const []const u8, stderr: *Io.Writer)
         // preview
         else if (mem.eql(u8, opt, "preview")) {
             const command = iter.getArg() orelse missingArg(stderr, iter, opt);
-            config.preview = allocator.dupe(u8, command) catch unreachable;
+            config.preview = try allocator.dupe(u8, command);
         }
 
         // preview-width
@@ -182,28 +178,29 @@ pub fn parse(allocator: Allocator, args: []const []const u8, stderr: *Io.Writer)
 
         // invalid option
         else {
-            stderr.print("zf: unrecognized option '{s}{s}'\n{s}\n", .{ if (iter.short_index != null) "-" else "--", opt, help }) catch unreachable;
-            stderr.flush() catch unreachable;
-            process.exit(2);
+            printAndExit(stderr, "zf: unrecognized option '{s}{s}'\n{s}\n", .{ if (iter.short_index != null) "-" else "--", opt, help }, 2);
         }
     }
 
     return config;
 }
 
+fn printAndExit(stderr: *Io.Writer, comptime fmt_str: []const u8, args: anytype, code: u8) noreturn {
+    stderr.print(fmt_str, args) catch |err| {
+        std.log.err("failed writing to stderr: {s}", .{@errorName(err)});
+    };
+    stderr.flush() catch |err| {
+        std.log.err("failed flushing stderr: {s}", .{@errorName(err)});
+    };
+    process.exit(code);
+}
+
 fn missingArg(stderr: *Io.Writer, iter: OptionIter, opt: []const u8) noreturn {
-    stderr.print(
-        "zf: option '{s}{s}' requires an argument\n{s}\n",
-        .{ if (iter.short_index != null) "-" else "--", opt, help },
-    ) catch unreachable;
-    stderr.flush() catch unreachable;
-    process.exit(2);
+    printAndExit(stderr, "zf: option '{s}{s}' requires an argument\n{s}\n", .{ if (iter.short_index != null) "-" else "--", opt, help }, 2);
 }
 
 fn argError(stderr: *Io.Writer, err: []const u8) noreturn {
-    stderr.print("zf: {s}\n{s}\n", .{ err, help }) catch unreachable;
-    stderr.flush() catch unreachable;
-    process.exit(2);
+    printAndExit(stderr, "zf: {s}\n{s}\n", .{ err, help }, 2);
 }
 
 const testing = std.testing;

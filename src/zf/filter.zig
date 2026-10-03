@@ -141,7 +141,7 @@ test "segmentLen" {
 
 pub fn rankNeedle(
     haystack: []const u8,
-    filenameOrNull: ?[]const u8,
+    filename_or_null: ?[]const u8,
     needle: []const u8,
     case_sensitive: bool,
     strict_path: bool,
@@ -179,7 +179,7 @@ pub fn rankNeedle(
     }
 
     // perform search on the filename only if requested
-    if (filenameOrNull) |filename| {
+    if (filename_or_null) |filename| {
         var it = IndexIterator.init(filename, needle[0], case_sensitive);
         while (it.next()) |start_index| {
             if (scanToEnd(filename, needle[1..], start_index, 0, null, case_sensitive, false)) |scan| {
@@ -265,7 +265,7 @@ test "rankNeedle" {
 }
 
 /// A simple, append-only array list backed by a fixed buffer
-pub fn FixedArrayList(comptime T: type) type {
+pub fn fixedArrayList(comptime T: type) type {
     return struct {
         buffer: []T,
         len: usize = 0,
@@ -292,9 +292,9 @@ pub fn FixedArrayList(comptime T: type) type {
     };
 }
 
-test "FixedArrayList" {
+test "fixedArrayList" {
     var buffer: [4]usize = undefined;
-    var list = FixedArrayList(usize).init(&buffer);
+    var list = fixedArrayList(usize).init(&buffer);
 
     list.append(1);
     list.append(2);
@@ -309,7 +309,7 @@ test "FixedArrayList" {
 
 pub fn highlightNeedle(
     haystack: []const u8,
-    filenameOrNull: ?[]const u8,
+    filename_or_null: ?[]const u8,
     needle: []const u8,
     case_sensitive: bool,
     strict_path: bool,
@@ -321,8 +321,8 @@ pub fn highlightNeedle(
 
     // Working memory for computing matches
     var buf: [1024]usize = undefined;
-    var matched = FixedArrayList(usize).init(&buf);
-    var best_matched = FixedArrayList(usize).init(matches);
+    var matched = fixedArrayList(usize).init(&buf);
+    var best_matched = fixedArrayList(usize).init(matches);
 
     if (strict_path) {
         var iter = PathIterator.init(needle);
@@ -356,7 +356,7 @@ pub fn highlightNeedle(
     }
 
     // highlight on the filename if requested
-    if (filenameOrNull) |filename| {
+    if (filename_or_null) |filename| {
         // The basename doesn't include trailing slashes so if the string ends in a slash the offset will be off by one
         const offset = haystack.len - filename.len - @as(usize, if (haystack[haystack.len - 1] == sep) 1 else 0);
 
@@ -412,7 +412,7 @@ fn scanToEnd(
     needle: []const u8,
     start_index: usize,
     offset: usize,
-    matched_indices: ?*FixedArrayList(usize),
+    matched_indices: ?*fixedArrayList(usize),
     case_sensitive: bool,
     strict_path: bool,
 ) ?ScanResult {

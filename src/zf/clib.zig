@@ -130,7 +130,7 @@ export fn highlightNeedle(
 }
 
 fn testHighlight(
-    expectedMatches: []const usize,
+    expected_matches: []const usize,
     haystack: [*:0]const u8,
     needles: []const [*:0]const u8,
     case_sensitive: bool,
@@ -138,7 +138,7 @@ fn testHighlight(
     matches_buf: []usize,
 ) !void {
     const len = highlight(haystack, needles.ptr, needles.len, case_sensitive, plain, matches_buf.ptr, matches_buf.len);
-    try testing.expectEqualSlices(usize, expectedMatches, matches_buf[0..len]);
+    try testing.expectEqualSlices(usize, expected_matches, matches_buf[0..len]);
 }
 
 test "highlight exported C library interface" {

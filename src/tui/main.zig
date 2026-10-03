@@ -7,7 +7,6 @@ const input = @import("input.zig");
 const opts = @import("opts.zig");
 const ui = @import("ui.zig");
 
-const ArrayList = std.ArrayList;
 const Haystack = input.Haystack;
 const Color = ui.Color;
 
@@ -36,7 +35,7 @@ pub fn main(init: std.process.Init) anyerror!void {
     const stderr = &stderr_writer.interface;
 
     const args = try init.minimal.args.toSlice(allocator);
-    var config = opts.parse(allocator, args, stderr);
+    var config = try opts.parse(allocator, args, stderr);
 
     // read all lines or exit on out of memory
     const buf = blk: {
@@ -64,7 +63,9 @@ pub fn main(init: std.process.Init) anyerror!void {
     const haystacks = try input.collectHaystacks(allocator, buf, delimiter);
     if (haystacks.len == 0) std.process.exit(1);
 
-    defer stdout.flush() catch unreachable;
+    defer stdout.flush() catch |err| {
+        std.log.err("failed to flush stdout: {s}", .{@errorName(err)});
+    };
     if (config.filter) |query| {
         // Use the heap here rather than an array on the stack. Testing showed that this is actually
         // faster, likely due to locality with other heap-alloced data used in the algorithm.

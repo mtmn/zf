@@ -7,7 +7,7 @@ const ArrayList = std.ArrayList;
 /// Manages a set based on an array list (with O(n) efficiency)
 /// Not efficient for large sizes of n of course, but for small use cases works well enough
 /// The most important part is that it maintains the order of the items in the set
-pub fn ArrayToggleSet(comptime T: type) type {
+pub fn arrayToggleSet(comptime T: type) type {
     return struct {
         set: ArrayList(T),
 
@@ -50,8 +50,8 @@ pub fn ArrayToggleSet(comptime T: type) type {
     };
 }
 
-test "basic ArrayToggleSet" {
-    var items: ArrayToggleSet(u8) = .empty;
+test "basic arrayToggleSet" {
+    var items: arrayToggleSet(u8) = .empty;
     defer items.deinit(testing.allocator);
 
     try items.toggle(testing.allocator, 1);
@@ -65,8 +65,8 @@ test "basic ArrayToggleSet" {
     try testing.expectEqualSlices(u8, &.{ 1, 2, 4, 10 }, items.slice());
 }
 
-test "unordered insertion ArrayToggleSet" {
-    var items: ArrayToggleSet(u8) = .empty;
+test "unordered insertion arrayToggleSet" {
+    var items: arrayToggleSet(u8) = .empty;
     defer items.deinit(testing.allocator);
 
     try items.toggle(testing.allocator, 10);
@@ -77,8 +77,8 @@ test "unordered insertion ArrayToggleSet" {
     try testing.expectEqualSlices(u8, &.{ 1, 2, 4, 10 }, items.slice());
 }
 
-test "removal ArrayToggleSet" {
-    var items: ArrayToggleSet(u8) = .empty;
+test "removal arrayToggleSet" {
+    var items: arrayToggleSet(u8) = .empty;
     defer items.deinit(testing.allocator);
 
     try items.toggle(testing.allocator, 10);

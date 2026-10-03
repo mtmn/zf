@@ -5,12 +5,12 @@ const zf = @import("zf");
 
 const Allocator = std.mem.Allocator;
 const ArrayList = std.ArrayList;
-const ArrayToggleSet = @import("array_toggle_set.zig").ArrayToggleSet;
+const array_toggle_set = @import("array_toggle_set.zig");
 const Haystack = input.Haystack;
 const Config = @import("opts.zig").Config;
-const EditBuffer = @import("EditBuffer.zig");
+const edit_buffer = @import("EditBuffer.zig");
 const Key = vaxis.Key;
-const Previewer = @import("Previewer.zig");
+const previewer = @import("Previewer.zig");
 
 const sep = std.fs.path.sep;
 
@@ -99,19 +99,19 @@ pub const State = struct {
     tty: vaxis.Tty,
 
     selected: usize = 0,
-    selected_rows: ArrayToggleSet(usize),
+    selected_rows: array_toggle_set.arrayToggleSet(usize),
     offset: usize = 0,
-    query: EditBuffer,
+    query: edit_buffer.EditBuffer,
     case_sensitive: bool = false,
     selection_changed: bool = true,
 
-    preview: ?Previewer = null,
+    preview: ?previewer.Previewer = null,
 
     pub fn init(io: std.Io, allocator: Allocator, env_map: *std.process.Environ.Map, buf: []u8, config: Config) !State {
         const vx = try vaxis.init(io, allocator, env_map, .{});
 
         const preview = if (config.preview) |cmd| blk: {
-            break :blk try Previewer.init(allocator, env_map, cmd);
+            break :blk try previewer.Previewer.init(allocator, env_map, cmd);
         } else null;
 
         return .{
@@ -124,7 +124,7 @@ pub const State = struct {
             .selected = 0,
             .selected_rows = .empty,
             .offset = 0,
-            .query = .empty,
+            .query = edit_buffer.EditBuffer.empty,
 
             .preview = preview,
         };
@@ -135,7 +135,9 @@ pub const State = struct {
 
         // We must clear the window because we aren't using the alternate screen
         state.vx.window().clear();
-        state.vx.render(state.tty.writer()) catch {};
+        state.vx.render(state.tty.writer()) catch |err| {
+            std.log.err("failed final render: {s}", .{@errorName(err)});
+        };
 
         state.vx.deinit(null, state.tty.writer());
         state.tty.deinit();
@@ -196,8 +198,8 @@ pub const State = struct {
 
             try state.draw(needles, filtered, haystacks.len);
 
-            const possibleResult = try state.handleInput(&loop, filtered.len);
-            if (possibleResult) |result| {
+            const possible_result = try state.handleInput(&loop, filtered.len);
+            if (possible_result) |result| {
                 switch (result) {
                     .cancel => return null,
                     .none => return &.{},
@@ -335,12 +337,19 @@ pub const State = struct {
             }
         }
 
-        // draw the prompt
-        // TODO: handle display of queries longer than the screen width
-        // const query_width = state.query.slice().len;
+        // draw the prompt, truncating queries longer than the available width
+        const prompt_width: u16 = @intCast(state.config.prompt.len);
+        const max_query_width: usize = @max(1, @as(usize, items_width) -| prompt_width);
+        var query_slice = state.query.slice();
+        if (query_slice.len > max_query_width) {
+            var start = query_slice.len - max_query_width;
+            // don't split a utf-8 codepoint at the truncation point
+            while (start < query_slice.len and (query_slice[start] & 0xC0) == 0x80) start += 1;
+            query_slice = query_slice[start..];
+        }
         _ = items.print(&.{
             .{ .text = state.config.prompt },
-            .{ .text = state.query.slice() },
+            .{ .text = query_slice },
         }, .{ .col_offset = 0, .row_offset = 0 });
 
         // draw a preview window if requested
@@ -366,7 +375,8 @@ pub const State = struct {
         }
 
         const config_prompt_len: u16 = @intCast(state.config.prompt.len);
-        items.showCursor(config_prompt_len + state.query.cursor, 0);
+        const cursor_col = @min(config_prompt_len + state.query.cursor, items_width -| 1);
+        items.showCursor(cursor_col, 0);
         try state.vx.render(state.tty.writer());
     }
 
@@ -428,7 +438,7 @@ pub const State = struct {
 };
 
 /// Deletes a word to the left of the cursor. Words are separated by space or slash characters
-fn deleteWord(allocator: Allocator, query: *EditBuffer) void {
+fn deleteWord(allocator: Allocator, query: *edit_buffer.EditBuffer) void {
     if (query.cursor == 0) return;
 
     var slice = query.slice()[0..query.cursor];

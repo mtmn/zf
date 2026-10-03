@@ -1,18 +1,12 @@
 //! Manages child processes used for previewing information about the selected line
 
 const heap = std.heap;
-const mem = std.mem;
-const os = std.os;
-const process = std.process;
 const std = @import("std");
 const vaxis = @import("vaxis");
 
-const Allocator = std.mem.Allocator;
-const ArrayList = std.ArrayList;
-const Child = process.Child;
 const Event = @import("ui.zig").State.Event;
 
-const Previewer = @This();
+pub const Previewer = @This();
 
 /// Thread-local arena allocator
 arena: heap.ArenaAllocator,
@@ -48,7 +42,11 @@ pub fn init(gpa: std.mem.Allocator, env_map: *std.process.Environ.Map, cmd: []co
 }
 
 pub fn deinit(previewer: *Previewer, io: std.Io) void {
-    if (previewer.thread) |*t| t.cancel(io) catch {};
+    if (previewer.thread) |*t| t.cancel(io) catch |err| switch (err) {
+        // expected when the thread is still blocked on the semaphore
+        error.Canceled => {},
+        else => std.log.err("failed to join previewer thread: {s}", .{@errorName(err)}),
+    };
     previewer.arena.deinit();
 }
 
@@ -103,9 +101,13 @@ pub fn run(gpa: std.mem.Allocator, io: std.Io, argv: []const []const u8) !std.pr
     });
     defer child.kill(io);
 
+    // SAFETY: initialized by multi_reader.init on the following lines before any other use.
     var multi_reader_buffer: std.Io.File.MultiReader.Buffer(2) = undefined;
+    // SAFETY: same as above; init fills every field we later read.
     var multi_reader: std.Io.File.MultiReader = undefined;
-    multi_reader.init(gpa, io, multi_reader_buffer.toStreams(), &.{ child.stdout.?, child.stderr.? });
+    const child_stdout = child.stdout orelse return error.StdoutNotPiped;
+    const child_stderr = child.stderr orelse return error.StderrNotPiped;
+    multi_reader.init(gpa, io, multi_reader_buffer.toStreams(), &.{ child_stdout, child_stderr });
     defer multi_reader.deinit();
 
     const stdout_reader = multi_reader.reader(0);

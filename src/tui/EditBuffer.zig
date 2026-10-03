@@ -7,7 +7,7 @@ const testing = std.testing;
 const Allocator = std.mem.Allocator;
 const ArrayList = std.ArrayList;
 
-const EditBuffer = @This();
+pub const EditBuffer = @This();
 
 buffer: ArrayList(u8),
 cursor: u16,
@@ -55,7 +55,9 @@ pub fn deleteTo(eb: *EditBuffer, allocator: Allocator, pos: usize) void {
     const end = @max(eb.cursor, @min(pos, eb.len()));
     if (start == end) return;
 
-    eb.buffer.replaceRange(allocator, start, end - start, "") catch unreachable;
+    eb.buffer.replaceRange(allocator, start, end - start, "") catch |err| switch (err) {
+        error.OutOfMemory => std.debug.panic("EditBuffer.deleteTo: out of memory", .{}),
+    };
 
     eb.cursor = start;
 

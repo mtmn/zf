@@ -136,14 +136,14 @@ fn testRankHaystacks(
 
     for (expected, 0..) |expected_str, i| {
         if (!std.mem.eql(u8, expected_str, ranked[i].str)) {
-            std.debug.print("\n======= order incorrect: ========\n", .{});
-            for (ranked[0..@min(ranked.len, expected.len)]) |haystack| std.debug.print("{s}\n", .{haystack.str});
-            std.debug.print("\n========== expected: ===========\n", .{});
-            for (expected) |str| std.debug.print("{s}\n", .{str});
-            std.debug.print("\n================================", .{});
-            std.debug.print("\nwith query:", .{});
-            for (needles) |needle| std.debug.print(" {s}", .{needle});
-            std.debug.print("\n\n", .{});
+            std.log.err("\n======= order incorrect: ========\n", .{});
+            for (ranked[0..@min(ranked.len, expected.len)]) |haystack| std.log.err("{s}\n", .{haystack.str});
+            std.log.err("\n========== expected: ===========\n", .{});
+            for (expected) |str| std.log.err("{s}\n", .{str});
+            std.log.err("\n================================", .{});
+            std.log.err("\nwith query:", .{});
+            for (needles) |needle| std.log.err(" {s}", .{needle});
+            std.log.err("\n\n", .{});
 
             return error.TestOrderIncorrect;
         }
